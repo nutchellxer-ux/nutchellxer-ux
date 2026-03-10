@@ -1,33 +1,33 @@
+import sys
 import os
-import subprocess
 
-def build_termuxer11():
-    print("\033[96m[*] Creating termuxer11 Environment...\033[0m")
-    
-    # Create the folder structure
-    folders = ["termuxer11/main", "termuxer11/runs"]
-    for folder in folders:
-        os.makedirs(folder, exist_ok=True)
-        print(f" [+] Folder created: {folder}")
+# Link to the internal engine folder
+sys.path.append(os.path.join(os.getcwd(), "main"))
 
-def sync_from_root():
-    # Base URL pointing to your root/main branch
-    base_url = "https://raw.githubusercontent.com/nutchellxer-ux/nutchellxer-ux/main/"
-    
-    # Map of files to their local paths
-    files = {
-        "main.py": "termuxer11/main.py",
-        "main/fetch.py": "termuxer11/main/fetch.py",
-        "main/recreate.py": "termuxer11/main/recreate.py",
-        "main/execute.py": "termuxer11/main/execute.py"
-    }
+try:
+    import fetch
+    import execute
+    import recreate
+except ImportError:
+    print("\033[91m[!] Error: Core engines (fetch, execute, recreate) missing in main/\033[0m")
+    sys.exit(1)
 
-    print("\033[92m[*] Syncing core assets to termuxer11/...\033[0m")
-    for repo_path, local_path in files.items():
-        subprocess.run(["curl", "-sL", f"{base_url}{repo_path}", "-o", local_path])
-        print(f"  -> Synced: {local_path}")
+def cli():
+    if len(sys.argv) < 3:
+        print("\033[93mUsage: nutchx [install|run|rebuild] [package]\033[0m")
+        return
+
+    cmd = sys.argv[1].lower()
+    pkg = sys.argv[2]
+
+    if cmd == "install":
+        fetch.fetch_pkg(pkg)
+    elif cmd == "run":
+        execute.run_pkg(pkg)
+    elif cmd == "rebuild":
+        recreate.rebuild(pkg)
+    else:
+        print(f"[!] Unknown command: {cmd}")
 
 if __name__ == "__main__":
-    build_termuxer11()
-    sync_from_root()
-    print("\033[95m\n[!] Setup Complete. System is live in termuxer11/\033[0m")
+    cli()
