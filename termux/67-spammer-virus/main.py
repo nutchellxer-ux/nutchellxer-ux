@@ -4,6 +4,91 @@ import time
 import subprocess
 import os
 
+# The ASCII "Image" Placeholder
+IMG_POPUP = [
+    "┌──────────┐",
+    "│  [IMG]   │",
+    "│  PICTURE │",
+    "└──────────┘"
+]
+
+def play_krush():
+    freq = random.randint(1500, 3500)
+    subprocess.Popen(["play", "-q", "-n", "synth", "0.02", "square", str(freq)], 
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def main(stdscr):
+    curses.curs_set(0)
+    curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
+    stdscr.nodelay(True)
+    curses.start_color()
+    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_CYAN, curses.COLOR_BLACK)
+    curses.init_pair(3, curses.COLOR_GREEN, curses.COLOR_BLACK)
+
+    popups = [] # List to track active popups: [(y, x), ...]
+    click_count = 0
+    stage = "IMAGE_CHAOS"
+    
+    while True:
+        rows, cols = stdscr.getmaxyx()
+        
+        if stage == "IMAGE_CHAOS":
+            # 1. Background Chaos (67s)
+            for _ in range(2):
+                try: stdscr.addstr(random.randint(0, rows-1), random.randint(0, cols-3), "67", curses.color_pair(1))
+                except: pass
+
+            # 2. Randomly Spawn Image Popups
+            if random.random() > 0.94 and len(popups) < 5:
+                py, px = random.randint(0, rows-5), random.randint(0, cols-13)
+                popups.append((py, px))
+                play_krush()
+
+            # 3. Draw Active Popups
+            for py, px in popups:
+                for i, line in enumerate(IMG_POPUP):
+                    try: stdscr.addstr(py + i, px, line, curses.color_pair(2) | curses.A_REVERSE)
+                    except: pass
+
+            # 4. Handle Mouse/Touch Clicks
+            key = stdscr.getch()
+            if key == curses.KEY_MOUSE:
+                _, mx, my, _, _ = curses.getmouse()
+                # Check if click hit any popup
+                for p in popups[:]:
+                    py, px = p
+                    if py <= my < py + 4 and px <= mx < px + 12:
+                        popups.remove(p)
+                        click_count += 1
+                        stdscr.clear() # Flash on click
+            
+            # Show Progress
+            try: stdscr.addstr(0, 0, f"INTERCEPTED: {click_count}/50", curses.color_pair(3) | curses.A_BOLD)
+            except: pass
+
+            if click_count >= 50:
+                stage = "SECRET_TYPE"
+                stdscr.clear()
+
+        elif stage == "SECRET_TYPE":
+            # The previous stages follow here...
+            stdscr.addstr(rows//2, (cols-25)//2, "IMAGE BREACH CONTAINED.", curses.color_pair(3))
+            stdscr.addstr(rows//2 + 1, (cols-30)//2, "PROCEED WITH pkg install...", curses.color_pair(1))
+            # (Insert previous logic for secret commands here)
+            break 
+
+        stdscr.refresh()
+        time.sleep(0.02)
+
+if __name__ == "__main__":
+    curses.wrapper(main)
+    import curses
+import random
+import time
+import subprocess
+import os
+
 # ASCII Art for the big 67
 BIG_67 = [
     "  ██████   ███████  ",
