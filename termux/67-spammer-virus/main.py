@@ -4,131 +4,102 @@ import time
 import subprocess
 import os
 
-def play_krush(intensity=1):
-    # Intensity increases the frequency and harshness
-    freq = random.randint(1500, 4000)
-    wave = random.choice(["square", "sawtooth"])
-    subprocess.Popen(["play", "-q", "-n", "synth", "0.02", wave, str(freq), "vol", str(0.4 * intensity)], 
-                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+# ASCII Art for the big 67
+BIG_67 = [
+    "  ██████   ███████  ",
+    " ██        ╚════██  ",
+    " ███████       ██   ",
+    " ██    ██     ██    ",
+    " ╚██████     ██     "
+]
 
-def draw_bar(stdscr, label, row, cols, color):
-    stdscr.clear()
-    stdscr.addstr(row - 2, (cols - len(label)) // 2, label, curses.A_BOLD | color)
-    for i in range(31):
-        bar = "█" * i + "▒" * (30 - i)
-        percent = f" LOADING ASSETS: {bar} {int(i/30*100)}%"
-        try: stdscr.addstr(row, (cols - len(percent)) // 2, percent, color)
-        except: pass
-        stdscr.refresh()
-        time.sleep(0.08)
+def play_alert():
+    try:
+        f = random.randint(1200, 3000)
+        subprocess.Popen(["play", "-q", "-n", "synth", "0.03", "square", str(f)], 
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except: pass
 
 def main(stdscr):
+    # Setup Terminal
     curses.curs_set(0)
     stdscr.nodelay(True)
     curses.start_color()
+    curses.use_default_colors()
     
-    # Color Schemes
-    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
-    curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
-    curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)
-    curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-
-    stage = "INITIAL_BREACH"
+    # Initialize Colors (1=Red, 2=Green, 3=Yellow, 4=Blue, 5=Magenta, 6=Cyan)
+    for i in range(1, 7):
+        curses.init_pair(i, i, -1)
+    
+    stage = "DISASTER"
     input_buffer = ""
-    start_time = time.time()
 
     while True:
         rows, cols = stdscr.getmaxyx()
         
-        if stage == "INITIAL_BREACH":
-            # Flood 67s with random sizes and flicker
-            for _ in range(3):
-                y, x = random.randint(0, rows-1), random.randint(0, cols-3)
-                attr = curses.color_pair(1) | (curses.A_BOLD if random.random() > 0.5 else 0)
-                try: stdscr.addstr(y, x, "67", attr)
-                except: pass
-            
-            if random.random() > 0.96: play_krush(1)
-            
-            key = stdscr.getch()
-            if key != -1:
-                input_buffer += chr(key)
-                if "pkg install nutchellxer" in input_buffer:
-                    draw_bar(stdscr, "NUTCHELLXER KERNEL INTEGRATION", rows // 2, cols, curses.color_pair(2))
-                    input_buffer = ""
-                    stage = "ASSET_FLOOD"
-
-        elif stage == "ASSET_FLOOD":
-            # Chaotic Wave Motion
-            t = time.time() - start_time
-            for i in range(5):
-                y = int((rows/2) + (rows/3) * (0.5 * (1 + 0.5 * (random.random()))))
-                x = int((cols/2) + (cols/3) * (random.uniform(-1, 1)))
-                try: stdscr.addstr(y, x, "67", curses.color_pair(4))
-                except: pass
-            
-            if random.random() > 0.90: play_krush(2)
-
-            key = stdscr.getch()
-            if key != -1:
-                input_buffer += chr(key)
-                if "nutch install 67-virus" in input_buffer:
-                    draw_bar(stdscr, "DOWNLOADING 67-VIRUS ASSET PACKS", rows // 2, cols, curses.color_pair(2))
-                    # Fake file manifest
-                    for _ in range(10):
-                        stdscr.addstr(random.randint(0, rows-1), 0, f"FETCH: /root/bin/67_payload_{random.randint(100,999)}.bin", curses.color_pair(2))
-                        stdscr.refresh()
-                        time.sleep(0.1)
-                    input_buffer = ""
-                    stage = "TERMINATION_PENDING"
-
-        elif stage == "TERMINATION_PENDING":
-            # Glitch effect: Random screen clears
-            if random.random() > 0.98: stdscr.clear()
+        if stage == "DISASTER":
+            # 1. Spawn Small 67s with Random Colors
             y, x = random.randint(0, rows-1), random.randint(0, cols-3)
-            try: stdscr.addstr(y, x, "67", curses.color_pair(1) | curses.A_REVERSE)
+            color = curses.color_pair(random.randint(1, 6))
+            try: stdscr.addstr(y, x, "67", color)
             except: pass
-            
-            key = stdscr.getch()
-            if key != -1:
-                input_buffer += chr(key)
-                if "67-virus ~stop" in input_buffer:
-                    input_buffer = ""
-                    stage = "FINAL_CONFIRM"
 
-        elif stage == "FINAL_CONFIRM":
+            # 2. Spawn Big 67s occasionally
+            if random.random() > 0.95:
+                by, bx = random.randint(0, max(0, rows-6)), random.randint(0, max(0, cols-22))
+                for i, line in enumerate(BIG_67):
+                    try: stdscr.addstr(by+i, bx, line, curses.color_pair(random.randint(1,6)) | curses.A_BOLD)
+                    except: pass
+                play_alert()
+
+            # Listen for Secret Command: pkg install nutchellxer
+            ch = stdscr.getch()
+            if ch != -1:
+                input_buffer += chr(ch)
+                if "pkg install nutchellxer" in input_buffer:
+                    stage = "ASSETS"
+                    input_buffer = ""
+                    stdscr.clear()
+
+        elif stage == "ASSETS":
+            # Display "Done" and wait for: nutch install 67-virus
+            stdscr.addstr(rows//2, (cols-30)//2, "NUTCHELLXER INSTALLED: DONE", curses.color_pair(2))
+            stdscr.refresh()
+            
+            ch = stdscr.getch()
+            if ch != -1:
+                input_buffer += chr(ch)
+                if "nutch install 67-virus" in input_buffer:
+                    stage = "STOP_WAIT"
+                    input_buffer = ""
+                    stdscr.addstr(rows//2 + 2, (cols-25)//2, "ASSETS DOWNLOADED: DONE", curses.color_pair(2))
+        
+        elif stage == "STOP_WAIT":
+            # Wait for: 67-virus ~stop
+            ch = stdscr.getch()
+            if ch != -1:
+                input_buffer += chr(ch)
+                if "67-virus ~stop" in input_buffer:
+                    stage = "FINAL"
+                    input_buffer = ""
+
+        elif stage == "FINAL":
             stdscr.clear()
-            msg = "!! CRITICAL OVERRIDE DETECTED !!"
-            instr = f"ENTER 'STOP' TO CONFIRM DESTRUCTION: {input_buffer}"
-            btn = "[ CONFIRM STOP ]"
+            msg = "TYPE 'STOP' AND PRESS ENTER"
+            stdscr.addstr(rows//2 - 2, (cols-len(msg))//2, msg, curses.color_pair(1) | curses.A_BOLD)
+            stdscr.addstr(rows//2, (cols-len(input_buffer))//2, input_buffer)
             
-            try:
-                stdscr.addstr(rows//2 - 4, (cols-len(msg))//2, msg, curses.color_pair(1) | curses.A_BLINK)
-                stdscr.addstr(rows//2, (cols-len(instr))//2, instr, curses.color_pair(4))
-                # The button
-                stdscr.addstr(rows//2 + 4, (cols-len(btn))//2, btn, curses.color_pair(3))
-            except: pass
-            
-            key = stdscr.getch()
-            if key != -1:
-                if key in (10, 13): # Enter
-                    if input_buffer.strip().upper() == "STOP":
-                        break
-                    else:
-                        input_buffer = "" # Reset on wrong word
-                elif key == 127: # Backspace
-                    input_buffer = input_buffer[:-1]
-                else:
-                    input_buffer += chr(key)
+            ch = stdscr.getch()
+            if ch != -1:
+                if ch in (10, 13):
+                    if input_buffer.strip().upper() == "STOP": break
+                    else: input_buffer = ""
+                elif ch == 127: input_buffer = input_buffer[:-1]
+                else: input_buffer += chr(ch)
 
         stdscr.refresh()
-        time.sleep(0.01)
+        time.sleep(0.02)
 
 if __name__ == "__main__":
-    # Check for sox first
-    if not os.path.exists("/data/data/com.termux/files/usr/bin/play"):
-        print("BOOTING CORE... (Missing sox, installing now)")
-        subprocess.run(["pkg", "install", "sox", "-y"])
-    
     curses.wrapper(main)
-    print("\n[67-VIRUS] SESSION CLEANED. SYSTEM NORMALIZED.")
+    print("--- SYSTEM RESTORED ---")
